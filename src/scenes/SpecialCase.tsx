@@ -6,6 +6,7 @@ import {
 	useCurrentFrame,
 	useVideoConfig,
 } from 'remotion';
+import {Nurse, NurseMood} from '../Nurse';
 
 const fontFamily =
 	'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -18,6 +19,8 @@ export type SpecialCaseProps = {
 	urgency: string;
 	accentColor: string;
 	bgColor: string;
+	nurseSpeech?: string;
+	nurseMood?: NurseMood;
 };
 
 export const SpecialCase: React.FC<SpecialCaseProps> = ({
@@ -28,6 +31,8 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 	urgency,
 	accentColor,
 	bgColor,
+	nurseSpeech = '这种要特别留意',
+	nurseMood = 'urgent',
 }) => {
 	const frame = useCurrentFrame();
 	const {fps} = useVideoConfig();
@@ -53,13 +58,13 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 				fontFamily,
 				flexDirection: 'column',
 				alignItems: 'center',
-				padding: '100px 60px',
-				gap: 30,
+				padding: '80px 60px 260px',
+				gap: 22,
 			}}
 		>
 			<div
 				style={{
-					fontSize: 44,
+					fontSize: 40,
 					color: accentColor,
 					fontWeight: 700,
 					letterSpacing: 8,
@@ -71,7 +76,7 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 
 			<div
 				style={{
-					fontSize: 240,
+					fontSize: 210,
 					lineHeight: 1,
 					transform: `scale(${emojiScale}) translateY(${emojiFloat}px)`,
 				}}
@@ -81,7 +86,7 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 
 			<div
 				style={{
-					fontSize: 110,
+					fontSize: 96,
 					fontWeight: 900,
 					color: accentColor,
 					opacity: titleOpacity,
@@ -96,13 +101,13 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 				style={{
 					background: '#fff',
 					borderRadius: 28,
-					padding: '40px 50px',
+					padding: '32px 44px',
 					display: 'flex',
 					flexDirection: 'column',
-					gap: 20,
-					width: '90%',
+					gap: 16,
+					width: '86%',
 					boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-					marginTop: 10,
+					marginTop: 6,
 				}}
 			>
 				{instructions.map((s, i) => {
@@ -120,20 +125,20 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 						<div
 							key={i}
 							style={{
-								fontSize: 44,
+								fontSize: 40,
 								color: '#1a1a2e',
 								fontWeight: 600,
 								opacity,
 								transform: `translateX(${x}px)`,
 								lineHeight: 1.35,
 								display: 'flex',
-								gap: 18,
+								gap: 16,
 							}}
 						>
 							<span
 								style={{
 									color: accentColor,
-									fontSize: 48,
+									fontSize: 44,
 									lineHeight: 1,
 									flexShrink: 0,
 								}}
@@ -150,18 +155,34 @@ export const SpecialCase: React.FC<SpecialCaseProps> = ({
 				style={{
 					background: accentColor,
 					color: '#fff',
-					padding: '22px 56px',
+					padding: '20px 50px',
 					borderRadius: 999,
-					fontSize: 56,
+					fontSize: 50,
 					fontWeight: 900,
 					opacity: urgencyOpacity,
 					transform: `scale(${urgencyScale})`,
-					marginTop: 10,
+					marginTop: 8,
 					boxShadow: `0 12px 32px ${accentColor}66`,
 					letterSpacing: 3,
 				}}
 			>
 				{urgency}
+			</div>
+
+			<div
+				style={{
+					position: 'absolute',
+					bottom: 30,
+					right: 30,
+				}}
+			>
+				<Nurse
+					speech={nurseSpeech}
+					size={240}
+					bubbleColor={accentColor}
+					mood={nurseMood}
+					bubbleDelay={80}
+				/>
 			</div>
 		</AbsoluteFill>
 	);

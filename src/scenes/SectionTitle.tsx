@@ -6,7 +6,7 @@ import {
 	useCurrentFrame,
 	useVideoConfig,
 } from 'remotion';
-import {Nurse} from '../Nurse';
+import {Nurse, NurseMood} from '../Nurse';
 
 const fontFamily =
 	'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -17,6 +17,7 @@ export type SectionTitleProps = {
 	accentColor: string;
 	bgColor: string;
 	nurseSpeech?: string;
+	nurseMood?: NurseMood;
 };
 
 export const SectionTitle: React.FC<SectionTitleProps> = ({
@@ -25,6 +26,7 @@ export const SectionTitle: React.FC<SectionTitleProps> = ({
 	accentColor,
 	bgColor,
 	nurseSpeech,
+	nurseMood = 'warm',
 }) => {
 	const frame = useCurrentFrame();
 	const {fps} = useVideoConfig();
@@ -99,6 +101,7 @@ export const SectionTitle: React.FC<SectionTitleProps> = ({
 						speech={nurseSpeech}
 						size={300}
 						bubbleColor={accentColor}
+						mood={nurseMood}
 					/>
 				</div>
 			)}

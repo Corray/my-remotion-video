@@ -6,6 +6,7 @@ import {
 	useCurrentFrame,
 	useVideoConfig,
 } from 'remotion';
+import {Nurse, NurseMood} from '../Nurse';
 
 const fontFamily =
 	'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -18,6 +19,8 @@ export type StepProps = {
 	emoji: string;
 	accentColor: string;
 	bgColor: string;
+	nurseSpeech?: string;
+	nurseMood?: NurseMood;
 };
 
 export const Step: React.FC<StepProps> = ({
@@ -28,6 +31,8 @@ export const Step: React.FC<StepProps> = ({
 	emoji,
 	accentColor,
 	bgColor,
+	nurseSpeech = '跟我一起做',
+	nurseMood = 'warm',
 }) => {
 	const frame = useCurrentFrame();
 	const {fps} = useVideoConfig();
@@ -90,13 +95,13 @@ export const Step: React.FC<StepProps> = ({
 				style={{
 					flexDirection: 'column',
 					alignItems: 'center',
-					padding: '260px 50px 80px',
-					gap: 24,
+					padding: '240px 50px 420px',
+					gap: 22,
 				}}
 			>
 				<div
 					style={{
-						fontSize: 200,
+						fontSize: 180,
 						transform: `translateY(${emojiFloat}px)`,
 						lineHeight: 1,
 					}}
@@ -106,7 +111,7 @@ export const Step: React.FC<StepProps> = ({
 
 				<div
 					style={{
-						fontSize: 340,
+						fontSize: 300,
 						fontWeight: 900,
 						color: accentColor,
 						transform: `scale(${charScale})`,
@@ -119,7 +124,7 @@ export const Step: React.FC<StepProps> = ({
 
 				<div
 					style={{
-						fontSize: 90,
+						fontSize: 82,
 						fontWeight: 900,
 						color: '#1a1a2e',
 						opacity: titleOpacity,
@@ -134,12 +139,12 @@ export const Step: React.FC<StepProps> = ({
 					style={{
 						background: '#fff',
 						borderRadius: 28,
-						padding: '36px 44px',
+						padding: '32px 40px',
 						display: 'flex',
 						flexDirection: 'column',
-						gap: 18,
+						gap: 16,
 						boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-						width: '92%',
+						width: '88%',
 						borderLeft: `12px solid ${accentColor}`,
 					}}
 				>
@@ -158,12 +163,12 @@ export const Step: React.FC<StepProps> = ({
 							<div
 								key={i}
 								style={{
-									fontSize: 44,
+									fontSize: 40,
 									color: '#1a1a2e',
 									fontWeight: 600,
 									lineHeight: 1.4,
 									display: 'flex',
-									gap: 16,
+									gap: 14,
 									alignItems: 'flex-start',
 									opacity,
 									transform: `translateX(${x}px)`,
@@ -172,7 +177,7 @@ export const Step: React.FC<StepProps> = ({
 								<span
 									style={{
 										color: accentColor,
-										fontSize: 46,
+										fontSize: 42,
 										lineHeight: 1.2,
 										flexShrink: 0,
 										fontWeight: 900,
@@ -186,6 +191,23 @@ export const Step: React.FC<StepProps> = ({
 					})}
 				</div>
 			</AbsoluteFill>
+
+			<div
+				style={{
+					position: 'absolute',
+					bottom: 30,
+					right: 30,
+					zIndex: 4,
+				}}
+			>
+				<Nurse
+					speech={nurseSpeech}
+					size={280}
+					bubbleColor={accentColor}
+					mood={nurseMood}
+					bubbleDelay={110}
+				/>
+			</div>
 		</AbsoluteFill>
 	);
 };

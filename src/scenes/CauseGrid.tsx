@@ -6,6 +6,7 @@ import {
 	useCurrentFrame,
 	useVideoConfig,
 } from 'remotion';
+import {Nurse} from '../Nurse';
 
 const fontFamily =
 	'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -34,17 +35,17 @@ export const CauseGrid: React.FC = () => {
 	return (
 		<AbsoluteFill
 			style={{
-				background: 'linear-gradient(180deg, #FFF8E1 0%, #FFECB3 100%)',
+				background: 'linear-gradient(180deg, #FFF8E1 0%, #FFE0B2 100%)',
 				fontFamily,
 				alignItems: 'center',
 				flexDirection: 'column',
-				gap: 60,
-				padding: '120px 60px',
+				gap: 50,
+				padding: '120px 60px 260px',
 			}}
 		>
 			<div
 				style={{
-					fontSize: 90,
+					fontSize: 84,
 					fontWeight: 900,
 					color: '#1a1a2e',
 					opacity: titleOpacity,
@@ -53,14 +54,14 @@ export const CauseGrid: React.FC = () => {
 					letterSpacing: 4,
 				}}
 			>
-				生活中的烫伤源
+				这些咱身边都有
 			</div>
 
 			<div
 				style={{
 					display: 'grid',
 					gridTemplateColumns: 'repeat(2, 1fr)',
-					gap: 40,
+					gap: 36,
 					width: '100%',
 				}}
 			>
@@ -77,20 +78,20 @@ export const CauseGrid: React.FC = () => {
 							style={{
 								background: '#fff',
 								borderRadius: 36,
-								padding: '50px 30px',
+								padding: '46px 26px',
 								display: 'flex',
 								flexDirection: 'column',
 								alignItems: 'center',
-								gap: 24,
+								gap: 20,
 								boxShadow: '0 12px 32px rgba(180,120,0,0.15)',
 								transform: `scale(${scale})`,
 								border: '4px solid #FFD23F',
 							}}
 						>
-							<div style={{fontSize: 180, lineHeight: 1}}>{c.emoji}</div>
+							<div style={{fontSize: 160, lineHeight: 1}}>{c.emoji}</div>
 							<div
 								style={{
-									fontSize: 46,
+									fontSize: 44,
 									fontWeight: 800,
 									color: '#1a1a2e',
 									textAlign: 'center',
@@ -105,16 +106,32 @@ export const CauseGrid: React.FC = () => {
 
 			<div
 				style={{
-					fontSize: 54,
+					fontSize: 48,
 					color: '#B85C00',
 					fontWeight: 800,
 					textAlign: 'center',
 					opacity: footerOpacity,
-					letterSpacing: 3,
-					marginTop: 20,
+					letterSpacing: 2,
+					marginTop: 10,
 				}}
 			>
-				处理方法都一样 · 黄金时间就是 5 分钟内
+				别急 · 黄金时间就是 5 分钟内
+			</div>
+
+			<div
+				style={{
+					position: 'absolute',
+					bottom: 30,
+					right: 30,
+				}}
+			>
+				<Nurse
+					speech="遇到别慌哦"
+					size={220}
+					bubbleColor="#F9A825"
+					mood="warm"
+					bubbleDelay={45}
+				/>
 			</div>
 		</AbsoluteFill>
 	);
