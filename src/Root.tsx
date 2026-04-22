@@ -2,6 +2,7 @@ import React from 'react';
 import {Composition} from 'remotion';
 import {YoungCyclist} from './YoungCyclist';
 import {Main, MAIN_DURATION_IN_FRAMES} from './Main';
+import {JiNiTaiMei, JINITAIMEI_DURATION_IN_FRAMES} from './JiNiTaiMei';
 
 export const RemotionRoot: React.FC = () => {
 	return (
@@ -10,6 +11,14 @@ export const RemotionRoot: React.FC = () => {
 				id="ScaldCare"
 				component={Main}
 				durationInFrames={MAIN_DURATION_IN_FRAMES}
+				fps={30}
+				width={1080}
+				height={1920}
+			/>
+			<Composition
+				id="JiNiTaiMei"
+				component={JiNiTaiMei}
+				durationInFrames={JINITAIMEI_DURATION_IN_FRAMES}
 				fps={30}
 				width={1080}
 				height={1920}
