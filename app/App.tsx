@@ -1,11 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Player} from '@remotion/player';
+import {ChatInput} from './ChatInput.js';
+import {TerminalPanel} from './TerminalPanel.js';
+import {useJobEvents} from './useJobEvents.js';
 
 type JobStatus =
 	| 'generating'
 	| 'ready'
 	| 'rendering'
 	| 'rendered'
+	| 'cancelled'
 	| 'error';
 
 type AssetInfo = {
@@ -61,6 +65,7 @@ function statusLabel(s: JobStatus): string {
 		ready: '已生成',
 		rendering: '渲染中',
 		rendered: '已渲染',
+		cancelled: '已中断',
 		error: '出错',
 	}[s];
 }
@@ -104,6 +109,14 @@ export const App: React.FC = () => {
 		() => jobs.find((j) => j.id === activeId) ?? null,
 		[jobs, activeId],
 	);
+
+	// Subscribe to the active job's live event stream. Terminal states have
+	// no more events incoming, but replay still gives us the history.
+	const eventsEnabled =
+		!!active &&
+		active.status !== 'rendering' &&
+		active.status !== 'rendered';
+	const {events: liveEvents} = useJobEvents(activeId, {enabled: eventsEnabled});
 
 	const refreshJobs = useCallback(async () => {
 		const res = await fetch('/api/jobs');
@@ -225,6 +238,35 @@ export const App: React.FC = () => {
 		await refreshJobs();
 	};
 
+	const cancelActive = useCallback(async () => {
+		if (!active) return;
+		const res = await fetch(`/api/jobs/${active.id}/cancel`, {method: 'POST'});
+		if (!res.ok) {
+			const d = (await res.json().catch(() => ({}))) as {error?: string};
+			alert(`中断失败: ${d.error ?? res.status}`);
+			return;
+		}
+		await refreshJobs();
+	}, [active, refreshJobs]);
+
+	const sendFeedback = useCallback(
+		async (content: string) => {
+			if (!active) return;
+			const res = await fetch(`/api/jobs/${active.id}/feedback`, {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({content}),
+			});
+			if (!res.ok) {
+				const d = (await res.json().catch(() => ({}))) as {error?: string};
+				alert(`发送反馈失败: ${d.error ?? res.status}`);
+				return;
+			}
+			await refreshJobs();
+		},
+		[active, refreshJobs],
+	);
+
 	const fitSize = useMemo(() => {
 		if (!active?.meta) return {width: 400, height: 711};
 		const aspect = active.meta.width / active.meta.height;
@@ -344,7 +386,7 @@ export const App: React.FC = () => {
 
 			<div className="panel">
 				<div className="row" style={{justifyContent: 'space-between'}}>
-					<h1>预览 / 渲染</h1>
+					<h1>预览 / 对话</h1>
 					{active && (
 						<span className={`status ${active.status}`}>
 							{statusLabel(active.status)}
@@ -358,108 +400,126 @@ export const App: React.FC = () => {
 					</div>
 				)}
 
-				{active && active.status === 'generating' && (
-					<div className="empty">
-						正在调用 Claude 生成 Composition… 一般 10-30 秒。
-					</div>
-				)}
-
-				{active && active.status === 'error' && (
-					<div className="error-box">
-						{active.error ?? '未知错误'}
-					</div>
-				)}
-
-				{active && Component && active.meta && (
+				{active && (
 					<>
-						<div className="preview-wrap">
-							<Player
-								component={Component}
-								durationInFrames={active.meta.durationInFrames}
-								fps={active.meta.fps}
-								compositionWidth={active.meta.width}
-								compositionHeight={active.meta.height}
-								style={{
-									width: fitSize.width,
-									height: fitSize.height,
-								}}
-								controls
-								loop
-							/>
-						</div>
-
-						<div>
-							<div className="muted" style={{marginBottom: 6}}>
-								{active.meta.width}×{active.meta.height} · {active.meta.fps}fps ·{' '}
-								{(active.meta.durationInFrames / active.meta.fps).toFixed(1)}s
+						{active.status === 'error' && (
+							<div className="error-box">
+								{active.error ?? '未知错误'}
 							</div>
-							{active.summary && (
-								<div className="muted" style={{marginBottom: 6}}>
-									📝 {active.summary}
+						)}
+
+						{Component && active.meta && (
+							<>
+								<div className="preview-wrap">
+									<Player
+										component={Component}
+										durationInFrames={active.meta.durationInFrames}
+										fps={active.meta.fps}
+										compositionWidth={active.meta.width}
+										compositionHeight={active.meta.height}
+										style={{
+											width: fitSize.width,
+											height: fitSize.height,
+										}}
+										controls
+										loop
+									/>
 								</div>
-							)}
-						</div>
 
-						<div className="row">
-							<button
-								onClick={startRender}
-								disabled={active.status === 'rendering'}
-							>
-								{active.status === 'rendering'
-									? `渲染中 ${Math.round((active.renderProgress ?? 0) * 100)}%`
-									: active.status === 'rendered'
-										? '重新渲染'
-										: '渲染 mp4'}
-							</button>
-							{active.status === 'rendered' && (
-								<a
-									href={`/api/jobs/${active.id}/download`}
-									style={{textDecoration: 'none'}}
-								>
-									<button className="secondary">下载 mp4</button>
-								</a>
-							)}
-						</div>
+								<div>
+									<div className="muted" style={{marginBottom: 6}}>
+										{active.meta.width}×{active.meta.height} ·{' '}
+										{active.meta.fps}fps ·{' '}
+										{(active.meta.durationInFrames / active.meta.fps).toFixed(
+											1,
+										)}
+										s
+									</div>
+									{active.summary && (
+										<div className="muted" style={{marginBottom: 6}}>
+											📝 {active.summary}
+										</div>
+									)}
+								</div>
 
-						{active.status === 'rendering' && (
-							<div className="progress-bar">
-								<div
-									style={{width: `${(active.renderProgress ?? 0) * 100}%`}}
-								/>
+								<div className="row">
+									<button
+										onClick={startRender}
+										disabled={active.status === 'rendering'}
+									>
+										{active.status === 'rendering'
+											? `渲染中 ${Math.round(
+													(active.renderProgress ?? 0) * 100,
+												)}%`
+											: active.status === 'rendered'
+												? '重新渲染'
+												: '渲染 mp4'}
+									</button>
+									{active.status === 'rendered' && (
+										<a
+											href={`/api/jobs/${active.id}/download`}
+											style={{textDecoration: 'none'}}
+										>
+											<button className="secondary">下载 mp4</button>
+										</a>
+									)}
+								</div>
+
+								{active.status === 'rendering' && (
+									<div className="progress-bar">
+										<div
+											style={{
+												width: `${(active.renderProgress ?? 0) * 100}%`,
+											}}
+										/>
+									</div>
+								)}
+
+								{active.status === 'rendered' && (
+									<video
+										src={`/api/jobs/${active.id}/download`}
+										controls
+										style={{
+											width: '100%',
+											maxHeight: 360,
+											background: '#000',
+										}}
+									/>
+								)}
+							</>
+						)}
+
+						{(active.status === 'ready' ||
+							active.status === 'rendering' ||
+							active.status === 'rendered') &&
+							!Component &&
+							!loadFailed && (
+								<div className="empty">加载 Composition 中…</div>
+							)}
+
+						{loadFailed && (
+							<div className="error-box">
+								Composition 模块加载失败。通常是生成的 tsx 里有运行时错误——
+								打开浏览器 DevTools 的 Console 标签（F12）看红色报错，或直接看
+								<code> src/generated/{active?.id}.tsx</code>。
+								<div style={{marginTop: 8}}>
+									<button
+										className="secondary"
+										onClick={() => window.location.reload()}
+									>
+										重新加载
+									</button>
+								</div>
 							</div>
 						)}
 
-						{active.status === 'rendered' && (
-							<video
-								src={`/api/jobs/${active.id}/download`}
-								controls
-								style={{width: '100%', maxHeight: 480, background: '#000'}}
-							/>
-						)}
+						<TerminalPanel events={liveEvents} />
+						<ChatInput
+							status={active.status}
+							onCancel={cancelActive}
+							onFeedback={sendFeedback}
+						/>
 					</>
-				)}
-
-				{active &&
-					(active.status === 'ready' ||
-						active.status === 'rendering' ||
-						active.status === 'rendered') &&
-					!Component &&
-					!loadFailed && <div className="empty">加载 Composition 中…</div>}
-
-				{loadFailed && (
-					<div className="error-box">
-						Composition 模块加载失败。通常是生成的 tsx 里有运行时错误——
-						打开浏览器 DevTools 的 Console 标签（F12）看红色报错，或直接看
-						<code> src/generated/{active?.id}.tsx</code>。
-						<div style={{marginTop: 8}}>
-							<button
-								className="secondary"
-								onClick={() => window.location.reload()}
-							>
-								重新加载
-							</button>
-						</div>
-					</div>
 				)}
 			</div>
 		</div>
