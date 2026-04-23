@@ -1,0 +1,2 @@
+{"ts":"2026-04-22T10:30:39Z","command":"impl","severity":"painful","developer":"chenrui","file":"docs/feedback/commands/impl-20260422-183039.md","title":"小任务分支未产出 tasks.yaml / design，阻断 /adversarial-review 的独立评估"}
+{"ts":"2026-04-22T10:30:39Z","command":"adversarial-review","severity":"painful","developer":"chenrui","file":"docs/feedback/commands/adversarial-review-20260422-183039.md","title":"缺 tasks.yaml 时硬失败，应支持 no-contract 降级模式"}
