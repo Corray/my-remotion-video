@@ -3,6 +3,7 @@ import {Composition} from 'remotion';
 import {YoungCyclist} from './YoungCyclist';
 import {Main, MAIN_DURATION_IN_FRAMES} from './Main';
 import {JiNiTaiMei, JINITAIMEI_DURATION_IN_FRAMES} from './JiNiTaiMei';
+import {GENERATED_COMPS} from './generated';
 
 export const RemotionRoot: React.FC = () => {
 	return (
@@ -32,6 +33,17 @@ export const RemotionRoot: React.FC = () => {
 				height={1080}
 				defaultProps={{}}
 			/>
+			{GENERATED_COMPS.map((c) => (
+				<Composition
+					key={c.id}
+					id={c.id}
+					component={c.component}
+					durationInFrames={c.durationInFrames}
+					fps={c.fps}
+					width={c.width}
+					height={c.height}
+				/>
+			))}
 		</>
 	);
 };

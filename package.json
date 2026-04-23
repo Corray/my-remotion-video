@@ -6,28 +6,48 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "@remotion/bundler": "^4.0.438",
     "@remotion/cli": "4.0.438",
+    "@remotion/player": "^4.0.438",
+    "@remotion/renderer": "^4.0.438",
+    "@remotion/tailwind-v4": "4.0.438",
     "@remotion/zod-types": "4.0.438",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "openai": "^6.34.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.438",
-    "zod": "4.3.6",
-    "@remotion/tailwind-v4": "4.0.438",
-    "tailwindcss": "4.0.0"
+    "tailwindcss": "4.0.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.438",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.6.0",
     "@types/react": "19.2.7",
     "@types/web": "0.0.166",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
     "eslint": "9.19.0",
     "prettier": "3.8.1",
-    "typescript": "5.9.3"
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3",
+    "vite": "^8.0.10"
   },
   "scripts": {
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
+    "lint": "eslint src && tsc",
+    "studio": "concurrently -n server,web -c cyan,magenta \"npm:studio:server\" \"npm:studio:web\"",
+    "studio:server": "tsx watch server/index.ts",
+    "studio:web": "vite --config app/vite.config.ts"
   },
   "sideEffects": [
     "*.css"
