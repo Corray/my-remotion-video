@@ -7,6 +7,7 @@ import jobsRouter from './routes/jobs.js';
 import renderRouter from './routes/render.js';
 import modelsRouter from './routes/models.js';
 import eventsRouter from './routes/events.js';
+import interactRouter from './routes/interact.js';
 import {listAvailableModels} from './providers/index.js';
 import {rewriteGeneratedIndex} from './registry.js';
 
@@ -34,6 +35,7 @@ async function main() {
 	app.use('/api', renderRouter);
 	app.use('/api', modelsRouter);
 	app.use('/api', eventsRouter);
+	app.use('/api', interactRouter);
 
 	app.listen(PORT, () => {
 		console.log(`[studio-server] listening on http://localhost:${PORT}`);
