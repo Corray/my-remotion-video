@@ -1,10 +1,10 @@
-import {anthropicAdapter} from './anthropic.js';
-import {openaiCompatAdapter} from './openai-compat.js';
-import type {ModelEntry, ProviderAdapter} from './types.js';
+import {anthropicStreamingAdapter} from './anthropic.js';
+import {openaiCompatStreamingAdapter} from './openai-compat.js';
+import type {ModelEntry, StreamingProviderAdapter} from './types.js';
 
 type Registered = {
 	entry: ModelEntry;
-	adapter: ProviderAdapter;
+	adapter: StreamingProviderAdapter;
 };
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
@@ -21,7 +21,7 @@ const REGISTRY: Registered[] = [
 			model: ANTHROPIC_MODEL,
 			envKey: 'ANTHROPIC_API_KEY',
 		},
-		adapter: anthropicAdapter,
+		adapter: anthropicStreamingAdapter,
 	},
 	{
 		entry: {
@@ -31,7 +31,7 @@ const REGISTRY: Registered[] = [
 			model: OPENAI_MODEL,
 			envKey: 'OPENAI_API_KEY',
 		},
-		adapter: openaiCompatAdapter,
+		adapter: openaiCompatStreamingAdapter,
 	},
 	{
 		entry: {
@@ -41,7 +41,7 @@ const REGISTRY: Registered[] = [
 			model: MINIMAX_MODEL,
 			envKey: 'MINIMAX_API_KEY',
 		},
-		adapter: openaiCompatAdapter,
+		adapter: openaiCompatStreamingAdapter,
 	},
 	{
 		entry: {
@@ -51,7 +51,7 @@ const REGISTRY: Registered[] = [
 			model: DEEPSEEK_MODEL,
 			envKey: 'DEEPSEEK_API_KEY',
 		},
-		adapter: openaiCompatAdapter,
+		adapter: openaiCompatStreamingAdapter,
 	},
 ];
 

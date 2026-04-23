@@ -4,11 +4,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {PUBLIC_ASSETS_DIR} from '../paths.js';
-import {generateWithRetry} from '../generator.js';
+import {
+	JobController,
+	disposeController,
+	registerController,
+} from '../generator.js';
 import {getDefaultModelId} from '../providers/index.js';
-import {writeGeneratedComposition, removeGeneratedComposition} from '../registry.js';
+import {removeGeneratedComposition} from '../registry.js';
 import {invalidateBundle} from '../bundler.js';
-import {saveJob, getJob, listJobs, updateJob} from '../jobs.js';
+import {saveJob, getJob, listJobs} from '../jobs.js';
 import type {AssetInfo, Job} from '../types.js';
 
 const router: Router = Router();
@@ -104,31 +108,12 @@ router.post('/jobs', upload.array('assets', 20), async (req, res) => {
 	};
 	saveJob(job);
 
-	// Respond immediately; generate in background.
+	// Respond immediately; controller emits events via SSE.
 	res.status(202).json({job});
 
-	generateWithRetry({modelId: requestedModel, input: {jobId, scene, assets}})
-		.then(async (result) => {
-			// Inject jobId into metadata if the model forgot — sanity guard.
-			let tsx = result.tsxContent;
-			if (!tsx.includes(jobId)) {
-				tsx = tsx.replace(/id:\s*['"][^'"]*['"]/, `id: '${jobId}'`);
-			}
-			await writeGeneratedComposition(jobId, tsx);
-			invalidateBundle();
-			updateJob(jobId, {
-				status: 'ready',
-				meta: result.meta,
-				summary: result.summary,
-				attempts: result.attempts.length,
-			});
-		})
-		.catch((err) => {
-			updateJob(jobId, {
-				status: 'error',
-				error: (err as Error).message ?? String(err),
-			});
-		});
+	const controller = new JobController(jobId, requestedModel);
+	registerController(controller);
+	controller.start(0);
 });
 
 router.delete('/jobs/:id', async (req, res) => {
@@ -136,6 +121,7 @@ router.delete('/jobs/:id', async (req, res) => {
 	if (!job) return res.status(404).json({error: 'Job not found'});
 	await removeGeneratedComposition(req.params.id);
 	invalidateBundle();
+	disposeController(req.params.id);
 	// Leave files in public/generated and out/ for now — easy to inspect.
 	res.json({ok: true});
 });
