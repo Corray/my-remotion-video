@@ -53,3 +53,55 @@
 - sprint: 2026-04-studio-chat · role: test · task: T000 · branch: feature/2026-04-studio-chat-test
 - commit: 33e3118 · 13 files changed (5 new, 8 modified)
 - heal_cycles: 0 · first_pass: false（因为 baseline lint 已挂，先修 baseline 再过断言）· human_intervention: false
+
+---
+## 2026-04-23 17:58 — studio-chat sprint · 后端 T001-T008 全部完成
+
+### 做了什么
+- /run-tasks backend 半自动执行 sprint 2026-04-studio-chat 的 8 个后端任务
+- 按设计 `docs/design/studio-chat-backend.md` 施工，每个任务独立 commit
+
+### 文件变更（22 files, +2383 / −90）
+- server/types.ts — StudioEvent/ConversationTurn/ErrorStage + Job 扩展（含 eventsTotalCount）
+- server/jobs.ts — appendEvent 环形缓冲（cap=500）+ __resetJobsForTest
+- server/providers/prompts.ts — buildConversation 多轮 + 截断 + feedback wrapper
+- server/providers/types.ts — AdapterEvent、StreamingProviderAdapter、ChatMessage
+- server/providers/anthropic.ts — translateAnthropicStream（纯函数）+ anthropicStreamingAdapter
+- server/providers/openai-compat.ts — translateOpenAIStream + MiniMax fallback（进程级记忆）
+- server/providers/index.ts — REGISTRY 切到 streaming 适配器
+- server/generator.ts — JobController 类（start/cancel/feedback/subscribe）+ controllers Map
+- server/routes/events.ts — SSE 流（replay + heartbeat + 410 eviction）
+- server/routes/interact.ts — cancel + feedback 路由
+- server/routes/jobs.ts — POST /jobs 改用 JobController；DELETE 同步 dispose
+- server/index.ts — 挂载 events + interact 路由
+- 测试：server/*.test.ts × 6（44 个 unit tests）
+
+### 测试
+- 8 个 task 每个独立 commit，各自有 verify pass
+- 最终全量：44 tests passing（8 test files）
+- 回归 npm run lint：0 errors（1 pre-existing warning on YoungCyclist 未动）
+
+### Commits（feature/2026-04-studio-chat-backend）
+- 4daf3e8  T001 types + appendEvent
+- 2c28f3f  T002 buildConversation
+- 458e524  T003 Anthropic streaming
+- 768127e  T004 OpenAI-compat streaming + MiniMax fallback
+- 65b4efd  T005 JobController
+- 3b12e69  T006 SSE events
+- f7818fc  T007 + T008 cancel + feedback
+
+### 遗留
+- 前端 T101-T104 未开始（前端 hook / TerminalPanel / ChatInput / App 整合）
+- 测试 T201-T203 需要后端+前端就绪后跑
+- T008 的 live-server HTTP 断言（tasks.yaml 里的 http 验证）暂以 supertest 集成测试覆盖，真正的端到端 HTTP 推迟到 T203
+- iterate-consensus Q1-Q5 仍按默认方案实现，没有用户反馈调整
+
+### 自愈
+- T002：原地改 types.ts 后发现要回滚 GenerateInput，避免打穿旧适配器 → 1 轮自愈
+- T005：Express 5 req.params 类型变宽，用 {id: string} 断言 → 1 轮自愈
+- T006：SSE 测试超时（心跳不停）→ 改逻辑：无 controller 时只 replay 并关闭 → 1 轮
+- T006：firstAvailable 计算错（没跟踪 eventsTotalCount）→ 加字段 → 1 轮
+
+### 下一步
+- /run-tasks frontend — 需要 useJobEvents hook + TerminalPanel + ChatInput + App.tsx 重构
+- 或先手工试跑一下 studio，真实调用 Claude 看看流式效果

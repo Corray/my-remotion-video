@@ -13,42 +13,42 @@
 
 ## 后端
 
-- [ ] **T001** 事件协议 + Job 结构扩展
+- [x] **T001** 事件协议 + Job 结构扩展
   - 角色：backend
   - 描述：在 `server/types.ts` 新增 `StudioEvent` 联合类型、`ConversationTurn` 类型；扩展 `Job` 加 `conversation`、`events`、`turn` 字段；`JobStatus` 加 `'cancelled'`；`server/jobs.ts` 加 `appendEvent(id, ev)` 辅助函数（环形缓冲 cap=500）
   - 验证摘要：文件含所有新类型，单测覆盖 appendEvent 环形逻辑；详见 `tasks.yaml#T001`
 
-- [ ] **T002** prompts 多轮对话改造
+- [x] **T002** prompts 多轮对话改造
   - 角色：backend
   - 描述：在 `server/providers/prompts.ts` 新增 `buildConversation(input, history)` 函数，输入 `ConversationTurn[]` 返回 OpenAI/Anthropic 的 messages 数组；system prompt 增加"后续反馈基于已有代码修改"的指令段；保留旧 `buildUserMessage` 作为首轮 helper
   - 验证摘要：单测覆盖首轮、单次反馈、多次反馈三种情况；详见 `tasks.yaml#T002`
 
-- [ ] **T003** Anthropic streaming 适配器
+- [x] **T003** Anthropic streaming 适配器
   - 角色：backend
   - 描述：重写 `server/providers/anthropic.ts`，用 `client.messages.stream()` 替代；yield `StudioEvent`（`thinking` / `token` / `tool_call_start` / `tool_args_delta` / `tool_call_done`）；签名改为 `AsyncIterable`；用 Mock SDK 写单测
   - 验证摘要：Mock Anthropic SDK 的单测覆盖流式路径 + cancel 中途退出；详见 `tasks.yaml#T003`
 
-- [ ] **T004** OpenAI-compat streaming 适配器
+- [x] **T004** OpenAI-compat streaming 适配器
   - 角色：backend
   - 描述：重写 `server/providers/openai-compat.ts`，`stream: true`；累积 tool_call delta；三家共用；MiniMax fallback 到非流式（try/catch 后走一次 `create()`）
   - 验证摘要：Mock openai SDK 的单测覆盖 OpenAI 路径 + MiniMax fallback 路径；详见 `tasks.yaml#T004`
 
-- [ ] **T005** JobController + generator 重构
+- [x] **T005** JobController + generator 重构
   - 角色：backend
   - 描述：`server/generator.ts` 从函数改为 `JobController` 类：持有 AbortController、conversation 历史、事件 bus；暴露 `start()` / `cancel()` / `feedback(text)`；把编译检查 + 重试循环嵌入事件流（emit `compile_check` / `retry`）；全局 `Map<jobId, JobController>` 便于路由查找
   - 验证摘要：单测覆盖 start/cancel/feedback 三条路径 + 重试行为；详见 `tasks.yaml#T005`
 
-- [ ] **T006** SSE 事件路由
+- [x] **T006** SSE 事件路由
   - 角色：backend
   - 描述：新建 `server/routes/events.ts`：`GET /api/jobs/:id/events`；支持 `?since=<n>` 和 `Last-Event-ID` 头做断线重连；每事件 `id: <index>\ndata: <json>\n\n`；job 活跃时订阅 JobController bus，job 已终结时只回放 events 历史
   - 验证摘要：启动 server 后用 curl 订阅模拟 job 的流并断言事件序列；详见 `tasks.yaml#T006`
 
-- [ ] **T007** Cancel 路由
+- [x] **T007** Cancel 路由
   - 角色：backend
   - 描述：新建 `server/routes/interact.ts`，`POST /api/jobs/:id/cancel`：查找 JobController → 调 `cancel()` → 更新 job.status；重复 cancel 也返回 ok；挂到 /api 路由下
   - 验证摘要：HTTP 断言 cancel 返回 200 + job 状态变 cancelled；详见 `tasks.yaml#T007`
 
-- [ ] **T008** Feedback 路由
+- [x] **T008** Feedback 路由
   - 角色：backend
   - 描述：同一 `interact.ts` 加 `POST /api/jobs/:id/feedback`；body `{content: string}`；行为：先 `cancel()` 当前轮（若在跑）→ 调 `feedback(content)` → turn++ → emit `user_feedback` 事件；返回 202
   - 验证摘要：HTTP 断言 feedback 触发新 turn 并产生新 tsx_written 事件；详见 `tasks.yaml#T008`
