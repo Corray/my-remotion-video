@@ -34,6 +34,7 @@ export function appendEvent(id: string, ev: StudioEvent): StudioEvent[] | undefi
 	const job = jobs.get(id);
 	if (!job) return undefined;
 	job.events.push(ev);
+	job.eventsTotalCount += 1;
 	while (job.events.length > EVENT_RING_CAP) {
 		job.events.shift();
 	}

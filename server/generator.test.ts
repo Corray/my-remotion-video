@@ -62,6 +62,7 @@ function mkJob(id = 'gen-test'): Job {
 		modelId: mockEntry.id,
 		conversation: [{role: 'user', content: 'scene', ts: now}],
 		events: [],
+		eventsTotalCount: 0,
 		turn: 0,
 		createdAt: now,
 		updatedAt: now,

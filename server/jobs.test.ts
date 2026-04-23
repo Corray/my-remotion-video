@@ -17,6 +17,7 @@ function mkJob(id = 'gen-1'): Job {
 		assets: [],
 		conversation: [{role: 'user', content: 'hi', ts: now}],
 		events: [],
+		eventsTotalCount: 0,
 		turn: 0,
 		createdAt: now,
 		updatedAt: now,

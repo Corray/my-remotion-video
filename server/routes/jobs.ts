@@ -102,6 +102,7 @@ router.post('/jobs', upload.array('assets', 20), async (req, res) => {
 		modelId: requestedModel,
 		conversation: [{role: 'user', content: scene, ts: now}],
 		events: [],
+		eventsTotalCount: 0,
 		turn: 0,
 		createdAt: now,
 		updatedAt: now,

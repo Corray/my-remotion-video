@@ -73,6 +73,8 @@ export type Job = {
 	mp4Path?: string;
 	conversation: ConversationTurn[];
 	events: StudioEvent[];
+	/** Monotonic count of events ever appended (NOT limited by ring cap). */
+	eventsTotalCount: number;
 	turn: number;
 	createdAt: number;
 	updatedAt: number;
