@@ -1,4 +1,5 @@
-import type {GenerateInput} from './types.js';
+import type {ConversationTurn} from '../types.js';
+import type {ChatMessage, GenerateInput} from './types.js';
 
 export const SYSTEM_PROMPT = `你是一个 Remotion 视频作曲师。根据用户描述的场景和提供的素材，生成一份可直接运行的 Remotion Composition TSX 文件。
 
@@ -159,4 +160,90 @@ ${scene}
 ${assetLines}${retryBlock}
 
 请调用 \`emit_composition\` 工具返回结果。metadata.id 必须等于 "${jobId}"。`;
+}
+
+/**
+ * 用户反馈轮的 user message。明确要求"基于已有代码修改"而不是重写。
+ */
+export function buildFeedbackMessage(feedback: string): string {
+	return `用户对上一次生成提出反馈，请基于【已有代码】作局部修改，不要完全重写：
+
+${feedback}
+
+请调用 emit_composition 工具返回修改后的完整 tsx。metadata.id 不变。`;
+}
+
+/**
+ * 粗略 token 估算：中文字符约 0.5 token，其它约 0.25 token。
+ * 不是真实 tokenization，只用于决定是否触发截断。
+ */
+export function estimateTokens(s: string): number {
+	let tokens = 0;
+	for (const c of s) {
+		if (c.codePointAt(0)! >= 0x4e00 && c.codePointAt(0)! <= 0x9fff) {
+			tokens += 0.5;
+		} else {
+			tokens += 0.25;
+		}
+	}
+	return Math.ceil(tokens);
+}
+
+export const TOKEN_BUDGET = 12_000;
+
+/**
+ * 把 Job.conversation 翻译成 provider 无关的 ChatMessage[]。
+ *
+ * 结构：
+ *   msg[0]            = buildUserMessage(input)   // 首轮场景 + 素材清单
+ *   msg[1..N-1]       = assistant 回显 / user 反馈  // 交替
+ *
+ * 如果总 token 估算超过 TOKEN_BUDGET，丢弃中间的 turn，保留
+ * 首轮 user + 最近 2 轮 user/assistant 对，并在中间插入一条
+ * assistant 标记说明历史被压缩。
+ */
+export function buildConversation(
+	input: GenerateInput,
+	history: ConversationTurn[],
+): ChatMessage[] {
+	if (history.length === 0) {
+		// 无历史：按首轮处理
+		return [{role: 'user', content: buildUserMessage(input)}];
+	}
+
+	const messages: ChatMessage[] = [];
+
+	// 首轮 user message 用完整的 buildUserMessage（包含 assets 清单）
+	messages.push({role: 'user', content: buildUserMessage(input)});
+
+	// 从 history[1] 开始，依次翻译为 assistant / feedback user
+	for (let i = 1; i < history.length; i++) {
+		const turn = history[i];
+		if (turn.role === 'assistant') {
+			messages.push({
+				role: 'assistant',
+				content: `已生成视频：${turn.content}${turn.tsxPath ? `（文件路径 ${turn.tsxPath}）` : ''}`,
+			});
+		} else {
+			messages.push({role: 'user', content: buildFeedbackMessage(turn.content)});
+		}
+	}
+
+	return maybeTruncate(messages);
+}
+
+function maybeTruncate(messages: ChatMessage[]): ChatMessage[] {
+	const total = messages.reduce((acc, m) => acc + estimateTokens(m.content), 0);
+	if (total <= TOKEN_BUDGET) return messages;
+
+	// 保留：首条（index 0）+ 最后 4 条（最近 2 轮 user/assistant 对）
+	if (messages.length <= 5) return messages;
+	const head = messages[0];
+	const tail = messages.slice(-4);
+	const noticeCount = messages.length - 5;
+	const notice: ChatMessage = {
+		role: 'assistant',
+		content: `（中间 ${noticeCount} 条对话已省略，保留了首轮需求和最近的反馈）`,
+	};
+	return [head, notice, ...tail];
 }
