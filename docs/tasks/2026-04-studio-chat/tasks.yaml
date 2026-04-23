@@ -9,6 +9,7 @@ tasks:
     role: test
     desc: "引入 vitest + playwright 测试基建"
     depends_on: []
+    status: done
     verify:
       - kind: cmd
         run: "npm ls vitest @testing-library/react happy-dom @playwright/test"

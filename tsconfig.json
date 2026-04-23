@@ -12,5 +12,5 @@
     "noUnusedLocals": true
   },
   "include": ["src/**/*"],
-  "exclude": ["remotion.config.ts", "app", "server", "node_modules"]
+  "exclude": ["remotion.config.ts", "app", "server", "node_modules", ".worktrees"]
 }

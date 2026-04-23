@@ -25,7 +25,10 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@remotion/eslint-config-flat": "4.0.438",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
@@ -35,10 +38,12 @@
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
     "eslint": "9.19.0",
+    "happy-dom": "^20.9.0",
     "prettier": "3.8.1",
     "tsx": "^4.21.0",
     "typescript": "5.9.3",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
   },
   "scripts": {
     "dev": "remotion studio",
@@ -47,7 +52,9 @@
     "lint": "eslint src && tsc",
     "studio": "concurrently -n server,web -c cyan,magenta \"npm:studio:server\" \"npm:studio:web\"",
     "studio:server": "tsx watch server/index.ts",
-    "studio:web": "vite --config app/vite.config.ts"
+    "studio:web": "vite --config app/vite.config.ts",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "sideEffects": [
     "*.css"

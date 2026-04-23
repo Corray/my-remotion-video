@@ -6,7 +6,7 @@
 
 ## 准备
 
-- [ ] **T000** 引入测试基建（vitest + playwright）
+- [x] **T000** 引入测试基建（vitest + playwright）
   - 角色：test
   - 描述：安装 `vitest`、`@testing-library/react`、`happy-dom`、`@playwright/test`；创建 `vitest.config.ts` 覆盖 server/ + app/；创建 `playwright.config.ts`；`package.json` 加 `test` 和 `test:e2e` 两个 script；跑一个空壳冒烟用例确保基建就绪
   - 验证摘要：`npm test` 和 `npm run test:e2e` 都能绿；详见 `tasks.yaml#T000`

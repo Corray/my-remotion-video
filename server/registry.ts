@@ -45,12 +45,20 @@ ${items}
 	await fs.writeFile(GENERATED_INDEX, content, 'utf8');
 }
 
+const TSX_NOCHECK_HEADER =
+	'// @ts-nocheck — LLM-generated composition; excluded from tsc to avoid\n' +
+	'// noise (unused imports, `noUnusedLocals`, non-deterministic randomness).\n' +
+	'// Runtime correctness is validated separately by the studio compile-check.\n';
+
 export async function writeGeneratedComposition(
 	jobId: string,
 	tsxContent: string,
 ): Promise<string> {
 	const file = path.join(GENERATED_DIR, `${jobId}.tsx`);
-	await fs.writeFile(file, tsxContent, 'utf8');
+	const withHeader = tsxContent.startsWith('// @ts-nocheck')
+		? tsxContent
+		: TSX_NOCHECK_HEADER + tsxContent;
+	await fs.writeFile(file, withHeader, 'utf8');
 	await rewriteGeneratedIndex();
 	return file;
 }

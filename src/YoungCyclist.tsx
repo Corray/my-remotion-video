@@ -17,7 +17,7 @@ export const YoungCyclist: React.FC = () => {
 		progress,
 		[0, 1],
 		[-400, width + 200],
-		Easing.inOut(Easing.quad)
+		{easing: Easing.inOut(Easing.quad)}
 	);
 
 	// 上下轻微起伏（模拟踩踏）
