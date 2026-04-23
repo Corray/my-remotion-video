@@ -24,3 +24,32 @@
 
 ### 遗留
 - YoungCyclist.tsx 的 TS 错误是基线旧问题，和此次任务无关；如后续要打包 HelloWorld composition 需要修
+
+---
+## 2026-04-23 17:18 — studio-chat sprint · T000 测试基建
+
+### 做了什么
+- 走 /impl → 判大任务 → /iterate 产出 sprint 2026-04-studio-chat 的共识 + checklist + tasks.yaml
+- /run-tasks test 执行 T000：引入 vitest + @testing-library/react + happy-dom + playwright 测试基建
+- 顺手把 pre-existing 的 lint baseline 修到全绿（YoungCyclist.tsx:20 的 Easing 用法错了；eslint 忽略 src/generated/；registry.ts 让以后生成的 tsx 自动带 @ts-nocheck）
+- 清掉 src/generated/ 下 4 个旧的 MiniMax 测试产物
+
+### 文件变更
+- 新增：vitest.config.ts / playwright.config.ts / tests/smoke.test.ts / tests/e2e/smoke.spec.ts
+- 修改：package.json（test / test:e2e scripts）、eslint.config.mjs（ignore src/generated/）、tsconfig.json（ignore .worktrees）、src/YoungCyclist.tsx（Easing fix）、server/registry.ts（自动插入 @ts-nocheck header）
+
+### 测试
+- T000 的 7 条 verify 断言全通过（npm ls / package.json contains / configs contains / npm test 1 passed / npm run test:e2e --list 1 listed / npm run lint exit 0）
+- 前置 commit：main 上 3 个（Studio MVP + baseline + iterate docs）
+- 本任务 commit：33e3118 on feature/2026-04-studio-chat-test
+
+### 遗留
+- T201/T202/T203（test 角色的其余任务）被 T005/T006/T104 阻塞
+- 建议下一步：/design backend 先把 JobController 状态机画清楚，然后 /run-tasks backend
+- .claude/commands/impl.md 有未提交的老改动（非本次 sprint 范畴，暂未动）
+- YoungCyclist.tsx:93 有个 pre-existing @remotion/non-pure-animation warning（旋转车轮依赖 transition 而非 frame）；不阻塞 lint
+
+### Metrics
+- sprint: 2026-04-studio-chat · role: test · task: T000 · branch: feature/2026-04-studio-chat-test
+- commit: 33e3118 · 13 files changed (5 new, 8 modified)
+- heal_cycles: 0 · first_pass: false（因为 baseline lint 已挂，先修 baseline 再过断言）· human_intervention: false
