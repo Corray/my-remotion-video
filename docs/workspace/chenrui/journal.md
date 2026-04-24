@@ -140,10 +140,60 @@
 
 ### PR
 - https://github.com/Corray/my-remotion-video/pull/1 — 本地 smoke 全绿后通过 GitHub Web 手工建（本机未装 gh CLI）
+- merge commit 1880b0a（2026-04-24 10:02）合入 main
 
 ### 遗留
 - 测试 T201-T203（test 角色）仍未跑，需后端+前端都 merge 之后再走 /run-tasks test
 - docs/design/studio-chat-frontend.md 未生成，实际按 backend 设计 + checklist 直接落地，没踩坑
+
+---
+## 2026-04-24 10:30 — studio-chat sprint · 测试 T201-T203 全部完成
+
+### 做了什么
+- /run-tasks test 串行执行 sprint 2026-04-studio-chat 的 3 个测试任务
+- feature/2026-04-studio-chat-test 分支基于 main HEAD=1880b0a（PR #1 已 merge）起
+- 每任务一 commit，Review + 集成测试 + push 完成，PR 待手工创建（遵循 memory 里的"先手工 smoke 再建 PR"偏好）
+
+### 文件变更（feature/2026-04-studio-chat-test 上 4 个 commit，+727 / −15）
+- tests/providers.integration.test.ts（新，400 行）— T201：real OpenAI SDK ↔ node:http mock upstream，3 scenarios
+- tests/sse.e2e.test.ts（新，254 行）— T202：real express + fetch streaming，replay + live reconnect
+- tests/e2e/studio-chat-flow.spec.ts（+70 / −15）— T203：path B（保守），补渲染→下载，加 timeout 常量 + JSDoc
+- docs/tasks/2026-04-studio-chat/checklist.md（T201-T203 勾选）
+
+### 测试
+- T201 verify：file_contains "MiniMax fallback" ✅；`npm test -- providers.integration` 3/3 pass；`npm test` 全量 73/73 ✅
+- T202 verify：file_contains "since" ✅；`npm test -- sse.e2e` 3/3 pass；全量 76/76 ✅
+- T203 verify：file_contains "feedback" ✅（9 occurrences）；`npm run test:e2e -- --grep studio-chat-flow` exit 0（gated skip）✅
+- 最终全量 vitest：76/76 pass（13 test files）
+- 最终 lint：0 errors（YoungCyclist.tsx 那条 pre-existing warning 未动）
+
+### Commits（feature/2026-04-studio-chat-test）
+- dcbea3c  T201 provider streaming integration
+- c108745  T202 SSE e2e replay + reconnect
+- 13961d7  T203 studio-chat full UI e2e
+- f873720  sync checklist
+
+### 自愈
+- T201：2 轮 — (a) subscribe 在 start() 之后错过 `started` 事件 → 改 makeCollector helper 在 start 前订阅；(b) MockUpstream 的 res.on('close') 被 handler 的 req.on('close',()=>res.end()) 抢跑，加 handlerFinishedNaturally flag
+- T202：1 轮 — 试图在运行时覆盖 ES module 的 getProvider 报 "Cannot set property"，改用 vi.mock 在文件顶部
+- T203：0 轮 first_pass（路径 B 保守方案，只改 spec 文件）
+
+### Observed findings (未修，留给后续)
+- **generator.ts 有防御缺口**：当 cancel() mid-stream 触发时，OpenAI SDK 的 reader 有时静默结束而非抛 AbortError；generator.runLoop 的 for-await 正常退出但 tsxContent 空，导致发 `error stage=provider 'provider 未产出 tsxContent'` 而不是 `cancelled`。最小修复：在 for-await 后加 `if (this.abortController?.signal.aborted) { emit cancelled; return; }`。T201 的 test 暂时接受两种终态。建议单独起一个小 PR 修（或走 /spec-feedback）。
+- **events.ts 的 ring eviction 索引 bug**：当 eventsTotalCount > EVENT_RING_CAP（=500），replay 循环 `writeEvent(res, i, job.events[i])` 的 array 索引错了，应该是 `job.events[i - firstAvailable]`。当前测试没覆盖 >500 场景所以没触发，但真实 job 长跑会踩到。也建议单独修。
+- **T203 的 path A 折中**：为了不越过"test-only sprint"边界，T203 走 path B 把 UI E2E 留在 gated-skip 状态。未来做 path A 要改 server/providers/index.ts 加 `E2E_MOCK_PROVIDER=1` 分支 + playwright webServer，改动涉及 prod 代码，建议单独 PR。
+
+### 遗留
+- PR 未建（等 chenrui 确认，memory 偏好）— 建议走 GitHub Web 手建（本机无 gh）
+- 两个 observed findings 待确认是走单独 PR 还是记 /spec-feedback
+- .claude/commands/impl.md 的老 stash（stash@{1}）仍未处理
+
+### Metrics
+- sprint: 2026-04-studio-chat · role: test · branch: feature/2026-04-studio-chat-test
+- 3 个 impl 事件（T201-T203）已写入 .harness-metrics/impl/2026-04.jsonl
+- 统计：2 个 medium + 1 个 small；3 轮自愈（T201 2 轮 + T202 1 轮）；7 个新测试用例
+- 整条 sprint（T000-T203）完结：14 个任务跨 3 条分支 4 个 PR（backend/frontend 已 merge，test 待建）
+
 
 ### Metrics
 - sprint: 2026-04-studio-chat · role: frontend · branch: feature/2026-04-studio-chat-frontend
