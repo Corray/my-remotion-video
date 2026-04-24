@@ -138,8 +138,10 @@
 - f44add1  sync checklist + gitignore（本 session）
 - feafb05  gitignore fix（本 session，上一条 gitignore edit 失败后补）
 
+### PR
+- https://github.com/Corray/my-remotion-video/pull/1 — 本地 smoke 全绿后通过 GitHub Web 手工建（本机未装 gh CLI）
+
 ### 遗留
-- PR 未建，等 chenrui 本地 `npm run studio` 跑一遍完整流 → 再决定是否 `gh pr create`
 - 测试 T201-T203（test 角色）仍未跑，需后端+前端都 merge 之后再走 /run-tasks test
 - docs/design/studio-chat-frontend.md 未生成，实际按 backend 设计 + checklist 直接落地，没踩坑
 
