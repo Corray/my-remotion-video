@@ -105,3 +105,47 @@
 ### 下一步
 - /run-tasks frontend — 需要 useJobEvents hook + TerminalPanel + ChatInput + App.tsx 重构
 - 或先手工试跑一下 studio，真实调用 Claude 看看流式效果
+
+---
+## 2026-04-24 09:43 — studio-chat sprint · 前端 T101-T104 全部完成
+
+### 做了什么
+- /run-tasks frontend 半自动执行 sprint 2026-04-studio-chat 的 4 个前端任务
+- 实际 T101-T104 代码在 2026-04-23 晚间就逐个 commit 完了（4 个 commit 一次过），本次会话是**中断恢复**：跑验证 → 勾选 checklist → review + 集成测试 → push
+- 所有任务首过（first_pass=true，heal_cycles=0），无自愈
+
+### 文件变更（feature/2026-04-studio-chat-frontend 上 6 个 commit，+1236 / −92）
+- app/useJobEvents.ts（EventSource + 指数 backoff + `?since=` resume）
+- app/TerminalPanel.tsx（事件染色 + 简洁/详细切换 + 200 条折叠）
+- app/ChatInput.tsx（中断按钮 + 反馈 textarea + Cmd/Ctrl+Enter 快捷键，素材按钮 disabled 留 Q1 扩展）
+- app/App.tsx（右栏整合 TerminalPanel + ChatInput，cancel 保留 scene 文本对齐 Q2）
+- 测试：useJobEvents.test.tsx / TerminalPanel.test.tsx / ChatInput.test.tsx（vitest + happy-dom）
+- e2e: tests/e2e/{chat-input, terminal-panel, studio-chat-flow}.spec.ts（gated on E2E_STUDIO）
+- 本 session 补：checklist.md 勾选 + .gitignore 加 Playwright artifacts
+
+### 验证
+- npm test：70/70 pass（11 test files）
+- npx tsc -p app/tsconfig.json：0 errors
+- npm run lint：0 errors（1 pre-existing YoungCyclist.tsx warning）
+- npm run test:e2e：1 smoke pass + 5 gated skip（需 `E2E_STUDIO=1` + 跑 studio）
+- 契约对齐：SSE `event: studio` + `?since=` + cancel/feedback POST 与后端 T006-T008 全部对上
+
+### Commits（feature/2026-04-studio-chat-frontend）
+- 854a86f  T101 useJobEvents
+- c86de4d  T102 TerminalPanel
+- 71567d5  T103 ChatInput
+- a3abfaf  T104 App.tsx 整合
+- f44add1  sync checklist + gitignore（本 session）
+- feafb05  gitignore fix（本 session，上一条 gitignore edit 失败后补）
+
+### 遗留
+- PR 未建，等 chenrui 本地 `npm run studio` 跑一遍完整流 → 再决定是否 `gh pr create`
+- 测试 T201-T203（test 角色）仍未跑，需后端+前端都 merge 之后再走 /run-tasks test
+- docs/design/studio-chat-frontend.md 未生成，实际按 backend 设计 + checklist 直接落地，没踩坑
+
+### Metrics
+- sprint: 2026-04-studio-chat · role: frontend · branch: feature/2026-04-studio-chat-frontend
+- 4 个 impl 事件（T101-T104）已写入 .harness-metrics/impl/2026-04.jsonl
+- 全部 first_pass=true · heal_cycles=0 · human_intervention=false
+- 本 session 真实耗时约 20 分钟（验证 + review + checklist 同步 + push）
+
