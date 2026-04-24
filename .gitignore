@@ -12,3 +12,7 @@ out
 # Keep checked in: src/generated/index.ts (harmless when empty), src/generated/.gitkeep.
 src/generated/*.tsx
 public/generated/
+
+# Playwright artifacts
+test-results/
+playwright-report/
