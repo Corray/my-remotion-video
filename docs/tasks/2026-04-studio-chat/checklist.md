@@ -77,17 +77,17 @@
 
 ## 测试
 
-- [ ] **T201** Provider streaming 集成测试
+- [x] **T201** Provider streaming 集成测试
   - 角色：test
   - 描述：写一个 Mock HTTP server 模拟 Anthropic 和 OpenAI 的 streaming 响应，跑通 JobController → adapter → 事件流的端到端；验证 cancel 在途中能真正终止连接
   - 验证摘要：`npm test -- providers.integration`；详见 `tasks.yaml#T201`
 
-- [ ] **T202** SSE 回放 + 断线重连
+- [x] **T202** SSE 回放 + 断线重连
   - 角色：test
   - 描述：启动真实 express，curl 订阅 /events 中途断开再用 `?since=N` 重连，断言事件无丢失无重复
   - 验证摘要：`npm test -- sse.e2e`；详见 `tasks.yaml#T202`
 
-- [ ] **T203** 完整 UI E2E
+- [x] **T203** 完整 UI E2E
   - 角色：test
   - 描述：Playwright 启动 `npm run studio`，打开 5173，用 Mock Anthropic key 全流程：输入 scene → 订阅 events → 看 TerminalPanel 出现事件 → 中断 → 发反馈 → 断言新轮事件 → 渲染 mp4 → 下载
   - 验证摘要：`npm run test:e2e`；详见 `tasks.yaml#T203`
