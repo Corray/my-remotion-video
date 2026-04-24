@@ -55,22 +55,22 @@
 
 ## 前端
 
-- [ ] **T101** useJobEvents React hook
+- [x] **T101** useJobEvents React hook
   - 角色：frontend
   - 描述：新建 `app/useJobEvents.ts`；封装 EventSource；参数 `jobId`、`enabled`；返回 `{events, status, connected}`；自动断线重连（指数 backoff）；unmount 关闭
   - 验证摘要：vitest + happy-dom 用 Mock EventSource 测挂载/事件累积/卸载关闭；详见 `tasks.yaml#T101`
 
-- [ ] **T102** TerminalPanel 组件
+- [x] **T102** TerminalPanel 组件
   - 角色：frontend
   - 描述：新建 `app/TerminalPanel.tsx`；受控接收 `events: StudioEvent[]`；按事件类型渲染不同颜色/前缀（`>` 用户 / `✦` 助手 / `!` 编译错误 / `↻` 重试）；右上角「简洁/详细」切换；自动滚底；超过 200 条折叠最老的
   - 验证摘要：vitest 组件测试 + Playwright E2E 可视；详见 `tasks.yaml#T102`
 
-- [ ] **T103** ChatInput 组件
+- [x] **T103** ChatInput 组件
   - 角色：frontend
   - 描述：新建 `app/ChatInput.tsx`；包含「中断」按钮（job.status === 'generating' 时可点）+ 反馈 textarea + 「发送」按钮（Cmd/Ctrl+Enter 快捷键）；未生成时禁用中断；反馈提交后清空 textarea
   - 验证摘要：vitest 组件测试 + Playwright E2E；详见 `tasks.yaml#T103`
 
-- [ ] **T104** App.tsx 整合 + 重构
+- [x] **T104** App.tsx 整合 + 重构
   - 角色：frontend
   - 描述：把右栏（现"预览/渲染"）重构：上半 Player（保留），下半 TerminalPanel + ChatInput；`useJobEvents(activeId)` 订阅；去掉现有"生成中..."spinner；Q2 默认：cancel 后保留 scene 文本
   - 验证摘要：Playwright E2E 完整跑通 生成→中断→反馈→再生成→渲染；详见 `tasks.yaml#T104`
