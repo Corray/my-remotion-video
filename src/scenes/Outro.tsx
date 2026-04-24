@@ -134,9 +134,11 @@ export const Outro: React.FC = () => {
 
 			<div style={{position: 'absolute', bottom: 40, left: 40}}>
 				<Nurse
-					speech="照着做就对啦！"
+					speech="照着做 你行的"
 					size={320}
 					bubbleColor="#FFD23F"
+					mood="cheer"
+					hearts
 				/>
 			</div>
 		</AbsoluteFill>

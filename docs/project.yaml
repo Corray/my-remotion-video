@@ -1,29 +1,45 @@
 # 项目元信息（由 /init-baseline 自动生成，[人工] 标注的字段需手动补充）
 
-name: {project}
-type: existing                    # existing / new
-description: "{产品简介}"
+name: my-remotion-video
+type: existing                              # existing / new
+description: |
+  Remotion 视频工程 + AI 场景生成 Studio。
+  前者是 React-based 的视频作品集（ScaldCare / JiNiTaiMei / HelloWorld）；
+  后者是一个本地网页，封装 Claude/GPT/MiniMax/DeepSeek 四家 LLM，
+  让非开发者输入场景描述即可生成并渲染 Remotion composition。
 
 # 技术栈（自动检测）
-stack: {backend-java|frontend-react|frontend-taro|...}
-arch: {ddd|mvc|...}
-jdk: {11|21}                      # 后端项目
-db: {mysql|mongodb|es}            # 后端项目
-ui_lib: {antd|vant|antd-mobile}   # 前端项目
+stack: typescript-remotion-fullstack        # Remotion + Express + Vite + React
+frontend: vite-react-19
+backend: express-5
+video_engine: remotion-4.0.438
+runtime: node                               # 开发用 tsx 4.21
+language: typescript-5.9
+
+# LLM providers（Studio 可切换）
+llm_providers:
+  - anthropic                               # claude-sonnet-4-6 (默认)
+  - openai                                  # gpt-5
+  - minimax                                 # MiniMax-Text-01 (可覆盖)
+  - deepseek                                # deepseek-chat
 
 # 仓库信息（自动获取）
-repo: {owner/repo}
-baseline_commit: {HEAD commit hash}
-baseline_date: {YYYY-MM-DD}
+repo: Corray/my-remotion-video
+baseline_commit: f60904cc766e0c82dbeca2fcfedc0aca0b7c9a7d
+baseline_date: 2026-04-23
 
 # 需求来源 [人工]
 tapd_project_id:
-github_issue_repo:
+github_issue_repo: Corray/my-remotion-video
 
 # 共识文档来源
 consensus_source:
 
-# 已知约束 [人工]
+# 已知约束
 constraints:
-  # - "某模块不能 breaking change"
-  # - "某模块有技术债"
+  - "Remotion Composition id 只允许 a-z/A-Z/0-9/CJK/'-'；jobId 已采用 gen-<ts>-<hex>"
+  - "生成的 tsx 只能 import 'react' 和 'remotion'，禁止外部依赖"
+  - "Job 存内存，服务重启即丢；.env 改动必须重启 npm run studio"
+  - "Studio 执行 LLM 生成的任意代码，绝不能直接暴露公网"
+  - "Bundle 缓存粒度粗：每次新 composition 都会让 bundle 失效（~10-30s 重建）"
+  - ".claude/knowledge/ 当前是 Java/Spring 模板遗留，不适用本项目；/impl /review 暂不要无脑加载"

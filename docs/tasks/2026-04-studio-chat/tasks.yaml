@@ -1,0 +1,399 @@
+sprint: "2026-04-studio-chat"
+generated_at: "2026-04-23"
+baseline_commit: "f60904cc766e0c82dbeca2fcfedc0aca0b7c9a7d"
+consensus_doc: "docs/tasks/2026-04-studio-chat/iterate-consensus.md"
+
+tasks:
+  # ============== 准备 ==============
+  - id: T000
+    role: test
+    desc: "引入 vitest + playwright 测试基建"
+    depends_on: []
+    status: done
+    verify:
+      - kind: cmd
+        run: "npm ls vitest @testing-library/react happy-dom @playwright/test"
+        expect_exit: 0
+      - kind: file_contains
+        path: "package.json"
+        text: "\"test\":"
+      - kind: file_contains
+        path: "package.json"
+        text: "\"test:e2e\":"
+      - kind: file_contains
+        path: "vitest.config.ts"
+        text: "defineConfig"
+      - kind: file_contains
+        path: "playwright.config.ts"
+        text: "defineConfig"
+      - kind: cmd
+        run: "npm test"
+        expect_exit: 0
+      - kind: cmd
+        run: "npm run test:e2e -- --list"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  # ============== 后端 ==============
+  - id: T001
+    role: backend
+    desc: "server/types.ts 事件协议 + Job 扩展 + appendEvent 环形缓冲"
+    depends_on: [T000]
+    verify:
+      - kind: cmd
+        run: "npx tsc -p server/tsconfig.json"
+        expect_exit: 0
+      - kind: file_contains
+        path: "server/types.ts"
+        text: "export type StudioEvent"
+      - kind: file_contains
+        path: "server/types.ts"
+        text: "export type ConversationTurn"
+      - kind: file_matches
+        path: "server/types.ts"
+        regex: "conversation:\\s*ConversationTurn\\[\\]"
+      - kind: file_matches
+        path: "server/types.ts"
+        regex: "events:\\s*StudioEvent\\[\\]"
+      - kind: file_matches
+        path: "server/types.ts"
+        regex: "'cancelled'"
+      - kind: file_contains
+        path: "server/jobs.ts"
+        text: "export function appendEvent"
+      - kind: cmd
+        run: "npm test -- server/jobs"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T002
+    role: backend
+    desc: "prompts.ts 多轮对话改造：buildConversation + 反馈 system 指令"
+    depends_on: [T001]
+    verify:
+      - kind: cmd
+        run: "npx tsc -p server/tsconfig.json"
+        expect_exit: 0
+      - kind: file_contains
+        path: "server/providers/prompts.ts"
+        text: "export function buildConversation"
+      - kind: file_matches
+        path: "server/providers/prompts.ts"
+        regex: "(反馈|feedback|修改)"
+      - kind: cmd
+        run: "npm test -- providers/prompts"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T003
+    role: backend
+    desc: "Anthropic streaming 适配器重写（messages.stream + yield 事件）"
+    depends_on: [T002]
+    verify:
+      - kind: cmd
+        run: "npx tsc -p server/tsconfig.json"
+        expect_exit: 0
+      - kind: file_contains
+        path: "server/providers/anthropic.ts"
+        text: "messages.stream"
+      - kind: file_matches
+        path: "server/providers/anthropic.ts"
+        regex: "AsyncIterable|yield"
+      - kind: cmd
+        run: "npm test -- providers/anthropic"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T004
+    role: backend
+    desc: "OpenAI-compat streaming 适配器重写 + MiniMax fallback"
+    depends_on: [T002]
+    verify:
+      - kind: cmd
+        run: "npx tsc -p server/tsconfig.json"
+        expect_exit: 0
+      - kind: file_contains
+        path: "server/providers/openai-compat.ts"
+        text: "stream: true"
+      - kind: file_matches
+        path: "server/providers/openai-compat.ts"
+        regex: "(fallback|catch)"
+      - kind: cmd
+        run: "npm test -- providers/openai-compat"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T005
+    role: backend
+    desc: "JobController 重构：cancel + feedback + 重试事件化 + 历史截断"
+    depends_on: [T003, T004]
+    verify:
+      - kind: cmd
+        run: "npx tsc -p server/tsconfig.json"
+        expect_exit: 0
+      - kind: file_contains
+        path: "server/generator.ts"
+        text: "class JobController"
+      - kind: file_matches
+        path: "server/generator.ts"
+        regex: "cancel\\s*\\(\\s*\\)"
+      - kind: file_matches
+        path: "server/generator.ts"
+        regex: "feedback\\s*\\("
+      - kind: file_matches
+        path: "server/generator.ts"
+        regex: "AbortController"
+      - kind: cmd
+        run: "npm test -- generator"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T006
+    role: backend
+    desc: "SSE 事件路由 /api/jobs/:id/events（支持 since 重连）"
+    depends_on: [T005]
+    verify:
+      - kind: cmd
+        run: "npx tsc -p server/tsconfig.json"
+        expect_exit: 0
+      - kind: file_contains
+        path: "server/routes/events.ts"
+        text: "text/event-stream"
+      - kind: file_matches
+        path: "server/routes/events.ts"
+        regex: "(since|Last-Event-ID)"
+      - kind: file_contains
+        path: "server/index.ts"
+        text: "events.js"
+      # HTTP-level check: curl 订阅一个不存在的 job 应返回 404
+      - kind: http
+        method: GET
+        url: "http://localhost:3001/api/jobs/nonexistent/events"
+        expect_status: 404
+      - kind: cmd
+        run: "npm test -- sse"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T007
+    role: backend
+    desc: "POST /api/jobs/:id/cancel"
+    depends_on: [T005]
+    verify:
+      - kind: file_contains
+        path: "server/routes/interact.ts"
+        text: "'/jobs/:id/cancel'"
+      - kind: http
+        method: POST
+        url: "http://localhost:3001/api/jobs/nonexistent/cancel"
+        expect_status: 404
+      - kind: cmd
+        run: "npm test -- interact.cancel"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T008
+    role: backend
+    desc: "POST /api/jobs/:id/feedback（先 cancel 再启动新轮）"
+    depends_on: [T007]
+    verify:
+      - kind: file_contains
+        path: "server/routes/interact.ts"
+        text: "'/jobs/:id/feedback'"
+      - kind: http
+        method: POST
+        url: "http://localhost:3001/api/jobs/nonexistent/feedback"
+        expect_status: 404
+      - kind: cmd
+        run: "npm test -- interact.feedback"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  # ============== 前端 ==============
+  - id: T101
+    role: frontend
+    desc: "useJobEvents React hook（EventSource + 断线重连）"
+    depends_on: [T006]
+    verify:
+      - kind: file_contains
+        path: "app/useJobEvents.ts"
+        text: "export function useJobEvents"
+      - kind: file_matches
+        path: "app/useJobEvents.ts"
+        regex: "EventSource"
+      - kind: cmd
+        run: "npm test -- app/useJobEvents"
+        expect_exit: 0
+      - kind: cmd
+        run: "npx tsc -p app/tsconfig.json"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T102
+    role: frontend
+    desc: "TerminalPanel 组件（事件渲染 + 简洁/详细切换）"
+    depends_on: [T101]
+    verify:
+      - kind: file_contains
+        path: "app/TerminalPanel.tsx"
+        text: "export const TerminalPanel"
+      - kind: file_matches
+        path: "app/TerminalPanel.tsx"
+        regex: "(简洁|详细|verbose|concise)"
+      - kind: cmd
+        run: "npm test -- app/TerminalPanel"
+        expect_exit: 0
+      - kind: cmd
+        run: "npx tsc -p app/tsconfig.json"
+        expect_exit: 0
+      - kind: e2e
+        script: "tests/e2e/terminal-panel.spec.ts"
+        screenshot: true
+        assertions:
+          - "page has element [data-testid='terminal-panel']"
+          - "after generate click, terminal shows 'started' event line"
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T103
+    role: frontend
+    desc: "ChatInput 组件（中断 + 反馈 textarea）"
+    depends_on: [T101]
+    verify:
+      - kind: file_contains
+        path: "app/ChatInput.tsx"
+        text: "export const ChatInput"
+      - kind: file_matches
+        path: "app/ChatInput.tsx"
+        regex: "(中断|cancel|interrupt)"
+      - kind: cmd
+        run: "npm test -- app/ChatInput"
+        expect_exit: 0
+      - kind: cmd
+        run: "npx tsc -p app/tsconfig.json"
+        expect_exit: 0
+      - kind: e2e
+        script: "tests/e2e/chat-input.spec.ts"
+        screenshot: true
+        assertions:
+          - "page has element [data-testid='cancel-btn']"
+          - "page has element [data-testid='feedback-textarea']"
+          - "cancel button is disabled when job is not generating"
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T104
+    role: frontend
+    desc: "App.tsx 整合 TerminalPanel + ChatInput，替换旧 spinner"
+    depends_on: [T102, T103]
+    verify:
+      - kind: file_contains
+        path: "app/App.tsx"
+        text: "TerminalPanel"
+      - kind: file_contains
+        path: "app/App.tsx"
+        text: "ChatInput"
+      - kind: file_contains
+        path: "app/App.tsx"
+        text: "useJobEvents"
+      - kind: cmd
+        run: "npx tsc -p app/tsconfig.json"
+        expect_exit: 0
+      - kind: e2e
+        script: "tests/e2e/studio-chat-flow.spec.ts"
+        screenshot: true
+        assertions:
+          - "after submit, terminal-panel shows activity"
+          - "clicking cancel stops generation and job.status becomes 'cancelled'"
+          - "submitting feedback triggers a new turn (terminal shows 'user_feedback' then 'started')"
+          - "after final 'ready' event, Player renders component"
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  # ============== 测试 ==============
+  - id: T201
+    role: test
+    desc: "Provider streaming 集成测试（Mock HTTP server）"
+    depends_on: [T005]
+    verify:
+      - kind: file_contains
+        path: "tests/providers.integration.test.ts"
+        text: "MiniMax fallback"
+      - kind: cmd
+        run: "npm test -- providers.integration"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T202
+    role: test
+    desc: "SSE 回放 + 断线重连集成测试"
+    depends_on: [T006]
+    verify:
+      - kind: file_contains
+        path: "tests/sse.e2e.test.ts"
+        text: "since"
+      - kind: cmd
+        run: "npm test -- sse.e2e"
+        expect_exit: 0
+      - kind: regression
+        scope: "full"
+        expect: all_pass
+
+  - id: T203
+    role: test
+    desc: "完整 UI E2E：生成→中断→反馈→再生成→渲染"
+    depends_on: [T104]
+    verify:
+      - kind: file_contains
+        path: "tests/e2e/studio-chat-flow.spec.ts"
+        text: "feedback"
+      - kind: cmd
+        run: "npm run test:e2e -- --grep studio-chat-flow"
+        expect_exit: 0
+
+product_confirmations:
+  - id: Q1
+    question: "反馈是否支持上传新素材？"
+    default: "否"
+    blocks: [T008, T103]
+  - id: Q2
+    question: "中断后表单 scene 文本保留还是清空？"
+    default: "保留"
+    blocks: [T104]
+  - id: Q3
+    question: "MiniMax streaming 不兼容时 fallback 到非流式？"
+    default: "是（降级为单次响应）"
+    blocks: [T004]
+  - id: Q4
+    question: "终端面板默认显示粒度：简洁 vs 详细？"
+    default: "简洁，右上角可切详细"
+    blocks: [T102]
+  - id: Q5
+    question: "conversation 历史超长时截断策略？"
+    default: "保留首轮 + 最新 2 轮，丢弃中间"
+    blocks: [T005]

@@ -1,0 +1,118 @@
+# 2026-04-jntm · Machine-verifiable task assertions
+#
+# 供 /adversarial-review 机械化跑断言使用。每条 verify:
+#   - cmd: shell 命令，exit 0 视为通过
+#   - file_contains: {file, pattern} 用固定字符串匹配（不含正则）
+#
+# 所有 cmd 均假定在仓库根目录执行。
+
+sprint: 2026-04-jntm
+design: docs/design/jntm.md
+consensus: docs/tasks/2026-04-jntm/iterate-consensus.md
+commit: b7e91a7
+
+tasks:
+  - id: T001
+    desc: 主 composition 骨架：JiNiTaiMei.tsx 导出正确、帧数严格 1800、10 个 Sequence
+    status: done
+    verify:
+      - file_contains:
+          file: src/JiNiTaiMei.tsx
+          pattern: "export const JINITAIMEI_DURATION_IN_FRAMES"
+      - file_contains:
+          file: src/JiNiTaiMei.tsx
+          pattern: "export const JiNiTaiMei"
+      - cmd: "node -e \"const m=require('./src/JiNiTaiMei.tsx'.replace(/\\.tsx$/,'')); process.exit(0)\" 2>/dev/null || true"
+        # 上条只是占位；真正的帧数校验用下条 grep 组合断言：
+      - cmd: "grep -c '<Series.Sequence' src/JiNiTaiMei.tsx | grep -qx 10"
+        desc: 恰好 10 条 Series.Sequence
+      - cmd: "awk '/const (OPENING|TITLE|SING|DANCE|RAP|BASKETBALL|CHICKEN|BATTLE|BABY|OUTRO) = /{gsub(/[^0-9]/,\"\"); s+=$0} END{exit (s==1800)?0:1}' src/JiNiTaiMei.tsx"
+        desc: 10 个场景常量之和严格等于 1800
+
+  - id: T002
+    desc: 10 个场景文件齐全，每个使用 AbsoluteFill 作为根节点
+    status: done
+    verify:
+      - cmd: "test -f src/scenes/jntm/JntmOpening.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmTitle.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmSing.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmDance.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmRap.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmBasketball.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmChicken.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmBattle.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmBaby.tsx"
+      - cmd: "test -f src/scenes/jntm/JntmOutro.tsx"
+      - cmd: "ls src/scenes/jntm/Jntm*.tsx | wc -l | tr -d ' ' | grep -qx 10"
+        desc: 目录下恰好 10 个 JntmXxx.tsx
+      - cmd: "for f in src/scenes/jntm/Jntm*.tsx; do grep -q 'AbsoluteFill' \"$f\" || { echo \"missing AbsoluteFill in $f\"; exit 1; }; done"
+        desc: 每个场景使用 AbsoluteFill
+
+  - id: T003
+    desc: Root.tsx 正确注册 JiNiTaiMei，且既有 ScaldCare / HelloWorld 未被移除
+    status: done
+    verify:
+      - file_contains:
+          file: src/Root.tsx
+          pattern: "import {JiNiTaiMei, JINITAIMEI_DURATION_IN_FRAMES} from './JiNiTaiMei'"
+      - file_contains:
+          file: src/Root.tsx
+          pattern: "id=\"JiNiTaiMei\""
+      - file_contains:
+          file: src/Root.tsx
+          pattern: "component={JiNiTaiMei}"
+      - file_contains:
+          file: src/Root.tsx
+          pattern: "durationInFrames={JINITAIMEI_DURATION_IN_FRAMES}"
+      - file_contains:
+          file: src/Root.tsx
+          pattern: "id=\"ScaldCare\""
+        desc: 既有 ScaldCare 未被改
+      - file_contains:
+          file: src/Root.tsx
+          pattern: "id=\"HelloWorld\""
+        desc: 既有 HelloWorld 未被改
+      - cmd: "grep -c 'width={1080}' src/Root.tsx | awk '$1>=2{exit 0} {exit 1}'"
+        desc: 竖屏参数保留（1080×1920）
+
+  - id: T004
+    desc: 纯函数 / 确定性渲染：禁止 useState/useEffect/setTimeout/setInterval/Date.now/Math.random
+    status: done
+    verify:
+      - cmd: "! grep -rnE 'useState|useEffect' src/JiNiTaiMei.tsx src/scenes/jntm/"
+        desc: 禁用 useState / useEffect
+      - cmd: "! grep -rnE 'setTimeout|setInterval|Date\\.now|Math\\.random' src/JiNiTaiMei.tsx src/scenes/jntm/"
+        desc: 禁用非确定性时间/随机源
+
+  - id: T005
+    desc: 新增代码通过 lint 校验，零 error 零 warning（既有 YoungCyclist.tsx 的历史告警不纳入本任务范围）
+    status: done
+    verify:
+      - cmd: "npx eslint src/JiNiTaiMei.tsx src/scenes/jntm/ --max-warnings 0"
+        desc: ESLint 在新增文件上零 warning 零 error
+
+  - id: T006
+    desc: 改动集中在单个 commit，可一键回滚
+    status: done
+    verify:
+      - cmd: "git cat-file -e b7e91a7^{commit}"
+        desc: commit 存在
+      - cmd: "git show --name-only --pretty=format: b7e91a7 | grep -c '^src/scenes/jntm/Jntm' | grep -qx 10"
+        desc: commit 包含 10 个 jntm 场景文件
+      - cmd: "git show --name-only --pretty=format: b7e91a7 | grep -qx 'src/JiNiTaiMei.tsx'"
+        desc: commit 包含主 composition 文件
+      - cmd: "git show --name-only --pretty=format: b7e91a7 | grep -qx 'src/Root.tsx'"
+        desc: commit 包含 Root.tsx 修改
+
+# --- 红线（失败直接 Reject，Evaluator 不评分） ---
+red_lines:
+  - id: RL-01
+    desc: 不得使用真人图像 / 未授权素材
+    verify:
+      - cmd: "! grep -rnE 'staticFile\\(' src/JiNiTaiMei.tsx src/scenes/jntm/"
+        desc: 新增文件未引用任何 staticFile 资源（本次无授权素材）
+  - id: RL-02
+    desc: 不得影响既有 ScaldCare composition 行为
+    verify:
+      - cmd: "git diff b7e91a7^ b7e91a7 --name-only -- src/Main.tsx src/Nurse.tsx src/scenes/ ':(exclude)src/scenes/jntm/**' | wc -l | tr -d ' ' | grep -qx 0"
+        desc: 本次 commit 未触碰既有 ScaldCare 相关文件（排除新增 jntm 子目录）

@@ -9,11 +9,76 @@ import {
 const fontFamily =
 	'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
 
+export type NurseMood = 'warm' | 'concerned' | 'cheer' | 'urgent' | 'caring';
+
 export type NurseProps = {
 	speech?: string;
 	size?: number;
 	flipped?: boolean;
 	bubbleColor?: string;
+	mood?: NurseMood;
+	// 气泡从第几帧开始弹出（默认 8）
+	bubbleDelay?: number;
+	// 是否显示爱心漂浮
+	hearts?: boolean;
+};
+
+type MoodShape = {
+	mouth: string;
+	leftBrow: string;
+	rightBrow: string;
+	cheekColor: string;
+	cheekOpacity: number;
+	// 手部上下摆动系数
+	armSwing: number;
+};
+
+const MOODS: Record<NurseMood, MoodShape> = {
+	warm: {
+		// 温柔微笑
+		mouth: 'M 86 124 Q 100 140 114 124',
+		leftBrow: 'M 74 87 Q 82 83 90 87',
+		rightBrow: 'M 110 87 Q 118 83 126 87',
+		cheekColor: '#F48FB1',
+		cheekOpacity: 0.55,
+		armSwing: 3,
+	},
+	caring: {
+		// 柔和抿嘴笑 + 更明显腮红
+		mouth: 'M 86 126 Q 100 136 114 126',
+		leftBrow: 'M 74 88 Q 82 85 90 89',
+		rightBrow: 'M 110 89 Q 118 85 126 88',
+		cheekColor: '#F06292',
+		cheekOpacity: 0.7,
+		armSwing: 2,
+	},
+	concerned: {
+		// 担忧：眉毛下垂内八，嘴微下撇
+		mouth: 'M 86 130 Q 100 122 114 130',
+		leftBrow: 'M 74 82 Q 82 88 90 86',
+		rightBrow: 'M 110 86 Q 118 88 126 82',
+		cheekColor: '#F48FB1',
+		cheekOpacity: 0.4,
+		armSwing: 2,
+	},
+	cheer: {
+		// 开心大笑，眉毛上扬
+		mouth: 'M 82 122 Q 100 146 118 122',
+		leftBrow: 'M 74 84 Q 82 78 90 84',
+		rightBrow: 'M 110 84 Q 118 78 126 84',
+		cheekColor: '#EC407A',
+		cheekOpacity: 0.7,
+		armSwing: 6,
+	},
+	urgent: {
+		// 严肃认真，眉毛压低
+		mouth: 'M 86 130 Q 100 130 114 130',
+		leftBrow: 'M 74 84 Q 82 90 90 86',
+		rightBrow: 'M 110 86 Q 118 90 126 84',
+		cheekColor: '#F48FB1',
+		cheekOpacity: 0.3,
+		armSwing: 2,
+	},
 };
 
 export const Nurse: React.FC<NurseProps> = ({
@@ -21,9 +86,13 @@ export const Nurse: React.FC<NurseProps> = ({
 	size = 300,
 	flipped = false,
 	bubbleColor = '#00B4D8',
+	mood = 'warm',
+	bubbleDelay = 8,
+	hearts = false,
 }) => {
 	const frame = useCurrentFrame();
 	const {fps} = useVideoConfig();
+	const m = MOODS[mood];
 
 	// 呼吸起伏
 	const breathe = 1 + Math.sin(frame / 15) * 0.018;
@@ -33,18 +102,27 @@ export const Nurse: React.FC<NurseProps> = ({
 	const isBlink = blinkCycle >= 82 && blinkCycle <= 88;
 	const eyeScaleY = isBlink ? 0.1 : 1;
 
-	// 挥手 / 姿态浮动
-	const handBob = Math.sin(frame / 8) * 3;
+	// 手臂摆动（mood 决定幅度）
+	const handBob = Math.sin(frame / 8) * m.armSwing;
+
+	// 点头（urgent / concerned 幅度更小）
+	const headNod =
+		mood === 'cheer' ? Math.sin(frame / 10) * 2 : Math.sin(frame / 18) * 0.8;
 
 	// 对话气泡出现动画
 	const bubbleScale = spring({
-		frame: frame - 8,
+		frame: frame - bubbleDelay,
 		fps,
 		config: {damping: 11, mass: 0.6},
 	});
-	const bubbleOpacity = interpolate(frame, [8, 24], [0, 1], {
-		extrapolateRight: 'clamp',
-	});
+	const bubbleOpacity = interpolate(
+		frame,
+		[bubbleDelay, bubbleDelay + 16],
+		[0, 1],
+		{
+			extrapolateRight: 'clamp',
+		},
+	);
 
 	const svgWidth = size;
 	const svgHeight = size * 1.4;
@@ -104,9 +182,43 @@ export const Nurse: React.FC<NurseProps> = ({
 				</div>
 			)}
 
+			{hearts && (
+				<>
+					{[0, 1, 2].map((i) => {
+						const baseDelay = i * 30;
+						const progress = ((frame + baseDelay) % 90) / 90;
+						const opacity =
+							progress < 0.15
+								? progress / 0.15
+								: progress > 0.85
+									? (1 - progress) / 0.15
+									: 1;
+						const y = -progress * 140;
+						const x = Math.sin((frame + baseDelay) / 12) * 18 + (i - 1) * 30;
+						return (
+							<div
+								key={i}
+								style={{
+									position: 'absolute',
+									left: '50%',
+									top: svgHeight * 0.25,
+									fontSize: size * 0.11,
+									transform: `translate(${x}px, ${y}px)`,
+									opacity,
+									pointerEvents: 'none',
+									zIndex: 1,
+								}}
+							>
+								💗
+							</div>
+						);
+					})}
+				</>
+			)}
+
 			<div
 				style={{
-					transform: `${flipped ? 'scaleX(-1) ' : ''}scale(${breathe})`,
+					transform: `${flipped ? 'scaleX(-1) ' : ''}scale(${breathe}) translateY(${headNod}px)`,
 					transformOrigin: 'center bottom',
 				}}
 			>
@@ -208,14 +320,14 @@ export const Nurse: React.FC<NurseProps> = ({
 
 					{/* 眉毛 */}
 					<path
-						d="M 74 87 Q 82 83 90 87"
+						d={m.leftBrow}
 						stroke="#4E342E"
 						strokeWidth="2.8"
 						fill="none"
 						strokeLinecap="round"
 					/>
 					<path
-						d="M 110 87 Q 118 83 126 87"
+						d={m.rightBrow}
 						stroke="#4E342E"
 						strokeWidth="2.8"
 						fill="none"
@@ -239,21 +351,21 @@ export const Nurse: React.FC<NurseProps> = ({
 						cy="120"
 						rx="8"
 						ry="5"
-						fill="#F48FB1"
-						opacity="0.55"
+						fill={m.cheekColor}
+						opacity={m.cheekOpacity}
 					/>
 					<ellipse
 						cx="128"
 						cy="120"
 						rx="8"
 						ry="5"
-						fill="#F48FB1"
-						opacity="0.55"
+						fill={m.cheekColor}
+						opacity={m.cheekOpacity}
 					/>
 
 					{/* 嘴 */}
 					<path
-						d="M 86 124 Q 100 140 114 124"
+						d={m.mouth}
 						fill="none"
 						stroke="#333"
 						strokeWidth="3"

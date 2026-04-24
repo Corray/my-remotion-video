@@ -6,6 +6,7 @@ import {
 	useCurrentFrame,
 	useVideoConfig,
 } from 'remotion';
+import {Nurse} from '../Nurse';
 
 const fontFamily =
 	'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -30,12 +31,13 @@ export const Intro: React.FC = () => {
 		<AbsoluteFill
 			style={{
 				background:
-					'radial-gradient(circle at 50% 40%, #3a1a1a 0%, #1a1a2e 60%, #0a0a1a 100%)',
+					'radial-gradient(circle at 50% 40%, #4a2420 0%, #2a1a3e 60%, #1a1430 100%)',
 				fontFamily,
 				alignItems: 'center',
-				justifyContent: 'center',
+				justifyContent: 'flex-start',
 				flexDirection: 'column',
-				gap: 60,
+				gap: 50,
+				paddingTop: 160,
 			}}
 		>
 			<div
@@ -46,8 +48,8 @@ export const Intro: React.FC = () => {
 			>
 				<div
 					style={{
-						fontSize: 260,
-						marginBottom: 30,
+						fontSize: 240,
+						marginBottom: 24,
 						transform: `scale(${firePulse})`,
 					}}
 				>
@@ -55,23 +57,23 @@ export const Intro: React.FC = () => {
 				</div>
 				<div
 					style={{
-						fontSize: 150,
+						fontSize: 140,
 						fontWeight: 900,
 						color: '#fff',
 						lineHeight: 1.15,
 						letterSpacing: 8,
-						textShadow: '0 4px 24px rgba(255,100,50,0.4)',
+						textShadow: '0 4px 24px rgba(255,140,80,0.5)',
 					}}
 				>
 					烫伤了
 					<br />
-					怎么办？
+					别慌，看我
 				</div>
 			</div>
 
 			<div
 				style={{
-					fontSize: 56,
+					fontSize: 52,
 					color: '#FFD23F',
 					fontWeight: 700,
 					opacity: subtitleOpacity,
@@ -79,15 +81,15 @@ export const Intro: React.FC = () => {
 					textAlign: 'center',
 				}}
 			>
-				第一时间做对 · 不留疤
+				第一时间做对 · 不留疤痕
 			</div>
 
 			<div
 				style={{
-					background: 'rgba(255,255,255,0.08)',
+					background: 'rgba(255,255,255,0.1)',
 					border: '2px solid rgba(255,210,63,0.4)',
 					borderRadius: 28,
-					padding: '28px 50px',
+					padding: '26px 46px',
 					opacity: statOpacity,
 					transform: `translateY(${statY}px)`,
 					maxWidth: 860,
@@ -95,21 +97,39 @@ export const Intro: React.FC = () => {
 			>
 				<div
 					style={{
-						fontSize: 42,
+						fontSize: 40,
 						color: '#fff',
 						fontWeight: 600,
 						textAlign: 'center',
 						lineHeight: 1.5,
 					}}
 				>
-					我国每年约{' '}
-					<span style={{color: '#FFD23F', fontWeight: 900, fontSize: 54}}>
+					咱国每年约{' '}
+					<span style={{color: '#FFD23F', fontWeight: 900, fontSize: 52}}>
 						2600 万
 					</span>{' '}
 					人烫伤
 					<br />
-					多数处理不当 · 留下永久疤痕
+					<span style={{color: '#FFB3B3'}}>多数处理不当 · 留下永久疤痕</span>
 				</div>
+			</div>
+
+			<div
+				style={{
+					position: 'absolute',
+					bottom: 80,
+					left: '50%',
+					transform: 'translateX(-50%)',
+				}}
+			>
+				<Nurse
+					speech="别怕 我带你学"
+					size={340}
+					bubbleColor="#FFD23F"
+					mood="caring"
+					bubbleDelay={100}
+					hearts
+				/>
 			</div>
 		</AbsoluteFill>
 	);

@@ -7,3 +7,12 @@ dist
 out
 
 .claude/settings.local.json
+
+# Studio: Claude-generated compositions and user-uploaded assets.
+# Keep checked in: src/generated/index.ts (harmless when empty), src/generated/.gitkeep.
+src/generated/*.tsx
+public/generated/
+
+# Playwright artifacts
+test-results/
+playwright-report/

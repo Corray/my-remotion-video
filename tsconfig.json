@@ -11,5 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true
   },
-  "exclude": ["remotion.config.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["remotion.config.ts", "app", "server", "node_modules", ".worktrees"]
 }
